@@ -2,13 +2,13 @@
 
 ## Now
 
-- Independent exact-source review of the fixed-step model, authored solution plans, save rejection rules, and UI edge cases.
+- Public source preview is available from the accepted source tag `source-accepted-6d525371` and the reviewed static preview at `https://loop-heist.fabian523417.chatgpt.site`.
 - Browser QA in desktop Chromium and a narrow mobile viewport when the owner grants the first-window slot.
 - Five fresh first-session playtests; record echo explanation, opening-chapter completion, retry, and save recovery observations.
 
 ## Next
 
-- Run the repaired private adversarial fixture against the exact commit and obtain a fresh independent decision.
+- Keep the source preview provenance tied to accepted source SHA `6d5253714b03b313abf195ccc12ed86bc5b2bb91`; the public branch may carry packaging-only metadata and CI.
 - Add Safari results if a review machine is available.
 - Replace the current text-only actor marks with reviewed original/licensed visual assets if visual review calls for it.
 

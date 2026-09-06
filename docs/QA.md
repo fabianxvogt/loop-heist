@@ -2,7 +2,7 @@
 
 ## Source checks
 
-The fixture runner validates all twelve stored solution plans and stable fingerprints, checks the runtime expected-result certificate, repeats each replay for equal fingerprints, checks canonical same-tick ties, requires echo interaction edges for timed switches, exercises real rewind/erase/retry plan steps, accepts a redundant release after terminal success, rejects semantically required event removal including Room 6's blocker and Room 10's third role, round-trips a save, and rejects wrong versions, too many echoes, negative ticks, bad sequence order, invalid progress/medals/checkpoints, cursor inconsistencies, and byte-oversized input. `npm test`, `npm run typecheck`, and `npm run build` pass on the repair checkout.
+The fixture runner validates all twelve stored solution plans and stable fingerprints, checks the runtime expected-result certificate, repeats each replay for equal fingerprints, checks canonical same-tick ties, requires echo interaction edges for timed switches, exercises real rewind/erase/retry plan steps, accepts a redundant release after terminal success, rejects semantically required event removal including Room 6's blocker and Room 10's third role, round-trips a save, and rejects wrong versions, too many echoes, negative ticks, bad sequence order, invalid progress/medals/checkpoints, cursor inconsistencies, and byte-oversized input. `npm test`, `npm run typecheck`, and `npm run build` pass on the repair checkout. The accepted source SHA is `6d5253714b03b313abf195ccc12ed86bc5b2bb91`; a public source tag preserves that exact tree. The public preview URL is `https://loop-heist.fabian523417.chatgpt.site`. Hosting metadata and CI are packaging-only additions after source acceptance and do not change game behavior.
 
 ## Contract coverage
 
@@ -19,4 +19,4 @@ The fixture runner validates all twelve stored solution plans and stable fingerp
 
 ## Not observed yet
 
-No human playtests have been run or inferred. No browser automation result is claimed. Safari is untested. The current handoff is source-complete but review-pending.
+No human playtests have been run or inferred. No browser automation result is claimed. Safari is untested. The current handoff is a reviewed source preview, not full-v1 or human signoff.

@@ -8,7 +8,7 @@ Implementation v1 is complete for source review: twelve authored rooms, bounded 
 
 Classification: `INCREMENTAL` game implementation. This is not a research or breakthrough claim.
 
-Human playtests have not been observed in this session. Desktop browser QA and narrow viewport QA are still review work. No release or hosting claim is made here.
+Human playtests have not been observed in this session. Desktop browser QA and narrow viewport QA are still review work. The reviewed source is published as a public source preview at the accepted source tag `source-accepted-6d525371`; the hosted preview is `https://loop-heist.fabian523417.chatgpt.site`. This is not full-v1 or human signoff.
 
 ## Run it
 
