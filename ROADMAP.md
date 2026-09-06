@@ -4,13 +4,13 @@
 
 - Accessible controls are implemented locally: visible touch/keyboard directions, Interact, six-tick Wait, and optional step-at-your-pace mode through the same deterministic model.
 - Preview-boundary repair is implemented locally: partial cursor previews stay running, while real room-budget completion still produces the budget terminal.
-- Public source preview remains at the last accepted source tag `source-accepted-6d525371`; this repair is not pushed or hosted until independent review.
+- Public source preview is released at accepted source tag `source-accepted-f809ade`, with the existing Loop Heist Site updated to the same reviewed repair.
 - Browser QA in desktop Chromium and a narrow mobile viewport when the owner grants the first-window slot.
 - Five fresh first-session playtests; record echo explanation, opening-chapter completion, retry, and save recovery observations.
 
 ## Next
 
-- Keep the source preview provenance tied to accepted source SHA `6d5253714b03b313abf195ccc12ed86bc5b2bb91`; the public branch may carry packaging-only metadata and CI.
+- Keep the source preview provenance tied to accepted source SHA `f809adeba1f0168b072c88a21096dcd2966a7a75`; later documentation-only commits must not be treated as game-source changes.
 - Obtain independent review of input-adapter equivalence, six-tick whole-world stepping, save mode compatibility, and 390px focus/touch behavior before publication.
 - Add Safari results if a review machine is available.
 - Replace the current text-only actor marks with reviewed original/licensed visual assets if visual review calls for it.

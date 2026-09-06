@@ -18,6 +18,13 @@ The fixture runner validates all twelve stored solution plans and stable fingerp
 | Campaign | 12 rooms, chapter unlocks, medals | Complete fresh campaign manually |
 | Save/import | Versioned byte bound, ordered events, cursor replay consistency, contiguous progress, medals, guarded storage | Browser quota/private-mode behavior |
 
+## Reviewed public preview evidence
+
+- Accepted source SHA: `f809adeba1f0168b072c88a21096dcd2966a7a75`; public tag: `source-accepted-f809ade`.
+- Public repository: `https://github.com/fabianxvogt/loop-heist`; CI run `34031280237` passed for the exact source SHA.
+- Existing Site version 2 uses the exact source SHA and archive `sha256:6d89f19c588f5975c19e7889423fd5b655f2c2cab0dc83a7731d3735a6c8be24`; live URL: `https://loop-heist.fabian523417.chatgpt.site`.
+- Live checks returned `200 text/html`, `200 text/javascript`, and `200 text/css`; the deployed hashed JS and CSS bytes matched the reviewed local build. No browser was opened for this release.
+
 ## Not observed yet
 
-No human playtests have been run or inferred. No browser automation result is claimed for the new accessible controls. Safari is untested. The current handoff is a local source repair awaiting independent review, not a pushed or hosted release.
+No human playtests have been run or inferred. No real-browser visual fit at 390px, desktop/mobile browser QA, Safari, device check, full campaign playthrough, or five-human acceptance is claimed. This is a public reviewed source preview, not full-v1 or user-gameplay acceptance.
