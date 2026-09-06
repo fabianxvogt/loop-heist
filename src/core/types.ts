@@ -1,6 +1,7 @@
 export type Action = 'up' | 'right' | 'down' | 'left' | 'interact';
 export type Phase = 'down' | 'up';
 export type Direction = Exclude<Action, 'interact'>;
+export type InputMode = 'realtime' | 'step';
 
 export interface InputEvent {
   tick: number;

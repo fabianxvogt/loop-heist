@@ -2,6 +2,7 @@ import type { Action, ActorState, Direction, InputEvent, PlanStep, Point, Replay
 
 export const TICK_RATE = 60;
 export const MOVE_EVERY = 6;
+export const STEP_BEAT = MOVE_EVERY;
 export const MAX_TICKS = 1800;
 export const MAX_ECHOES = 3;
 
@@ -15,12 +16,16 @@ export function pointKey(p: Point): string { return `${p.x},${p.y}`; }
 export function samePoint(a: Point, b: Point): boolean { return a.x === b.x && a.y === b.y; }
 function clonePoint(p: Point): Point { return { x: p.x, y: p.y }; }
 function cloneEvents(events: InputEvent[]): InputEvent[] { return events.map((event) => ({ ...event })); }
-function canonicalEvents(events: InputEvent[]): InputEvent[] {
+export function canonicalizeInputEvents(events: InputEvent[]): InputEvent[] {
   return cloneEvents(events).sort((a, b) => a.tick - b.tick || a.sequence - b.sequence || actionOrder[b.action] - actionOrder[a.action] || (a.phase === b.phase ? 0 : a.phase === 'down' ? -1 : 1));
 }
 
+export function appendInputEvent(events: InputEvent[], next: InputEvent): InputEvent[] {
+  return canonicalizeInputEvents([...events, { ...next }]);
+}
+
 function actor(at: Point, events: InputEvent[]): ActorState {
-  return { at: clonePoint(at), facing: 'down', held: new Set(), lastDirection: 'down', events: canonicalEvents(events), eventCursor: 0 };
+  return { at: clonePoint(at), facing: 'down', held: new Set(), lastDirection: 'down', events: canonicalizeInputEvents(events), eventCursor: 0 };
 }
 
 export function initialState(room: RoomStatic, echoTapes: InputEvent[][] = [], playerTape: InputEvent[] = []): SimState {
@@ -163,6 +168,16 @@ export function step(room: RoomStatic, state: SimState): SimState {
   return state;
 }
 
+export function advanceTicks(room: RoomStatic, state: SimState, ticks: number): SimState {
+  if (!Number.isInteger(ticks) || ticks < 0) throw new Error('Advance ticks must be a non-negative integer.');
+  for (let index = 0; index < ticks && state.terminal === 'running'; index += 1) step(room, state);
+  return state;
+}
+
+export function advanceBeat(room: RoomStatic, state: SimState): SimState {
+  return advanceTicks(room, state, STEP_BEAT);
+}
+
 export function replay(room: RoomStatic, echoTapes: InputEvent[][] = [], playerTape: InputEvent[] = [], until = room.budget): ReplayResult {
   if (echoTapes.length > MAX_ECHOES) throw new Error('At most three echo tapes are allowed.');
   const state = initialState(room, echoTapes, playerTape);
@@ -193,9 +208,9 @@ export function executePlan(room: RoomStatic, plan: SolutionPlan): PlanExecution
   const operations: string[] = [];
   for (const step of plan.steps ?? []) {
     operations.push(step.kind);
-    if (step.kind === 'play') currentTape = canonicalEvents(step.tape);
+    if (step.kind === 'play') currentTape = canonicalizeInputEvents(step.tape);
     if (step.kind === 'record') {
-      const tape = canonicalEvents(step.tape);
+      const tape = canonicalizeInputEvents(step.tape);
       if (!tape.length || echoTapes.length >= MAX_ECHOES) return { echoTapes, playerTape: currentTape, operations, failure: 'invalid record step' };
       echoTapes = [...echoTapes, tape]; currentTape = [];
     }

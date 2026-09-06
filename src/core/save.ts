@@ -1,4 +1,4 @@
-import type { InputEvent } from './types.ts';
+import type { InputEvent, InputMode } from './types.ts';
 import { MAX_ECHOES, MAX_TICKS, replay } from './model.ts';
 import { roomById } from './rooms.ts';
 
@@ -17,7 +17,7 @@ export interface SaveData {
   selectedEchoTapes: InputEvent[][];
   currentAttemptTape: InputEvent[];
   timelineCursor: number;
-  settings: { sound: boolean; reducedMotion: boolean; inputHints: boolean };
+  settings: { sound: boolean; reducedMotion: boolean; inputHints: boolean; inputMode: InputMode };
 }
 
 function assertEvents(events: unknown, name: string): asserts events is InputEvent[] {
@@ -54,7 +54,7 @@ export function roomIsSelectable(save: Pick<SaveData, 'completedRooms'>, roomId:
 
 export function defaultSave(roomId = 1): SaveData {
   const room = roomById(roomId);
-  return { formatVersion: FORMAT_VERSION, campaignVersion: CAMPAIGN_VERSION, chapter: room.chapter, roomId, completedRooms: [], medals: {}, roomStartCheckpoint: 'room-start', selectedEchoTapes: [], currentAttemptTape: [], timelineCursor: 0, settings: { sound: true, reducedMotion: false, inputHints: true } };
+  return { formatVersion: FORMAT_VERSION, campaignVersion: CAMPAIGN_VERSION, chapter: room.chapter, roomId, completedRooms: [], medals: {}, roomStartCheckpoint: 'room-start', selectedEchoTapes: [], currentAttemptTape: [], timelineCursor: 0, settings: { sound: true, reducedMotion: false, inputHints: true, inputMode: 'realtime' } };
 }
 
 export function serializeSave(save: SaveData): string {
@@ -104,7 +104,9 @@ export function parseSave(raw: string): SaveData {
 
   const settings = save.settings;
   if (!settings || typeof settings.sound !== 'boolean' || typeof settings.reducedMotion !== 'boolean' || typeof settings.inputHints !== 'boolean') throw new Error('Save settings are invalid.');
-  return { formatVersion: FORMAT_VERSION, campaignVersion: CAMPAIGN_VERSION, chapter: room.chapter, roomId: room.id, completedRooms: [...completedRooms], medals: { ...medals }, roomStartCheckpoint: 'room-start', selectedEchoTapes: selectedEchoTapes.map((tape) => tape.map((event) => ({ ...event }))), currentAttemptTape: currentAttemptTape.map((event) => ({ ...event })), timelineCursor, settings: { ...settings } };
+  const inputMode = settings.inputMode === undefined ? 'realtime' : settings.inputMode;
+  if (inputMode !== 'realtime' && inputMode !== 'step') throw new Error('Save input mode is invalid.');
+  return { formatVersion: FORMAT_VERSION, campaignVersion: CAMPAIGN_VERSION, chapter: room.chapter, roomId: room.id, completedRooms: [...completedRooms], medals: { ...medals }, roomStartCheckpoint: 'room-start', selectedEchoTapes: selectedEchoTapes.map((tape) => tape.map((event) => ({ ...event }))), currentAttemptTape: currentAttemptTape.map((event) => ({ ...event })), timelineCursor, settings: { sound: settings.sound, reducedMotion: settings.reducedMotion, inputHints: settings.inputHints, inputMode } };
 }
 
 export function safeLoad(storage: Storage | null, key: string): SaveData {

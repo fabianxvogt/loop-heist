@@ -2,7 +2,7 @@
 
 ## Source checks
 
-The fixture runner validates all twelve stored solution plans and stable fingerprints, checks the runtime expected-result certificate, repeats each replay for equal fingerprints, checks canonical same-tick ties, requires echo interaction edges for timed switches, exercises real rewind/erase/retry plan steps, accepts a redundant release after terminal success, rejects semantically required event removal including Room 6's blocker and Room 10's third role, round-trips a save, and rejects wrong versions, too many echoes, negative ticks, bad sequence order, invalid progress/medals/checkpoints, cursor inconsistencies, and byte-oversized input. `npm test`, `npm run typecheck`, and `npm run build` pass on the repair checkout. The accepted source SHA is `6d5253714b03b313abf195ccc12ed86bc5b2bb91`; a public source tag preserves that exact tree. The public preview URL is `https://loop-heist.fabian523417.chatgpt.site`. Hosting metadata and CI are packaging-only additions after source acceptance and do not change game behavior.
+The fixture runner validates all twelve stored solution plans and stable fingerprints, checks the runtime expected-result certificate, repeats each replay for equal fingerprints, checks canonical same-tick ties, requires echo interaction edges for timed switches, exercises real rewind/erase/retry plan steps, accepts a redundant release after terminal success, rejects semantically required event removal including Room 6's blocker and Room 10's third role, checks six-tick whole-world beats, checks touch/keyboard down/up and Interact tape equivalence, round-trips real-time and step-mode saves, defaults old saves safely, rejects invalid modes, and rejects wrong versions, too many echoes, negative ticks, bad sequence order, invalid progress/medals/checkpoints, cursor inconsistencies, and byte-oversized input. `npm test`, `npm run typecheck`, and `npm run build` pass on the repair checkout.
 
 ## Contract coverage
 
@@ -14,9 +14,10 @@ The fixture runner validates all twelve stored solution plans and stable fingerp
 | Doors, plates, timers | Interact edge for switches, level plates, decrement-after-evaluation | Verify authored timing windows at boundary ticks |
 | Guards | Fixed patrol, wait when echo blocks, swap collision | Check crossing and player collision precedence |
 | Timeline | Executable authored play/record/rewind/erase/retry steps plus current tape rewind | Browser interaction and save reload review |
+| Accessible input | Visible touch/keyboard directions, Interact, six-tick Wait, and optional step mode through the same model | Browser focus/touch review at 390px |
 | Campaign | 12 rooms, chapter unlocks, medals | Complete fresh campaign manually |
 | Save/import | Versioned byte bound, ordered events, cursor replay consistency, contiguous progress, medals, guarded storage | Browser quota/private-mode behavior |
 
 ## Not observed yet
 
-No human playtests have been run or inferred. No browser automation result is claimed. Safari is untested. The current handoff is a reviewed source preview, not full-v1 or human signoff.
+No human playtests have been run or inferred. No browser automation result is claimed for the new accessible controls. Safari is untested. The current handoff is a local source repair awaiting independent review, not a pushed or hosted release.

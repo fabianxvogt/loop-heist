@@ -1,4 +1,4 @@
-import { initialState, replay, step, validate, validateAuthoredSolution } from '../src/core/model.ts';
+import { advanceBeat, appendInputEvent, initialState, replay, step, validate, validateAuthoredSolution } from '../src/core/model.ts';
 import { ROOMS, validateCampaign, validateRoomBounds } from '../src/core/rooms.ts';
 import { MAX_SAVE_BYTES, defaultSave, parseSave, roomIsSelectable, serializeSave } from '../src/core/save.ts';
 import type { Action, InputEvent, RoomStatic } from '../src/core/types.ts';
@@ -31,12 +31,31 @@ const tiedDownThenRight = replay(tieRoom, [], [{ tick: 0, sequence: 0, action: '
 equal(JSON.stringify(tiedRightThenDown.state.player.at), JSON.stringify(tiedDownThenRight.state.player.at), 'same-sequence direction tie is canonical');
 equal(JSON.stringify(tiedRightThenDown.state.player.at), JSON.stringify({ x: 4, y: 3 }), 'same-sequence tie uses Up, Right, Down, Left precedence');
 
-const echoTimerRoom = reviewRoom({ timedSwitches: [{ id: 'clock', at: { x: 2, y: 2 }, duration: 5 }] });
+const echoTimerRoom = reviewRoom({ timedSwitches: [{ id: 'clock', at: { x: 1, y: 2 }, duration: 5 }] });
 const echoWithoutInteract = replay(echoTimerRoom, [hold('right', 0, 6)], [], 7);
 equal(echoWithoutInteract.state.timers.clock, 0, 'echo needs an interact edge for a timed switch');
 const timerAtOne = reviewRoom({ exit: { x: 6, y: 4 }, doors: [{ at: { x: 2, y: 2 }, timerIds: ['clock'] }], timedSwitches: [{ id: 'clock', at: { x: 1, y: 2 }, duration: 1 }] });
 const timerState = initialState(timerAtOne, [], hold('right', 0, 6)); timerState.timers.clock = 1; timerState.player.held.add('right'); timerState.player.lastDirection = 'right'; step(timerAtOne, timerState);
 equal(JSON.stringify(timerState.player.at), JSON.stringify({ x: 2, y: 2 }), 'timer remains open during remaining-one evaluation');
+
+const beatRoom = reviewRoom({ timedSwitches: [{ id: 'clock', at: { x: 1, y: 2 }, duration: 20 }], guards: [{ id: 'sentinel', patrol: [{ x: 3, y: 2 }, { x: 4, y: 2 }], cadence: 6 }] });
+const beatState = initialState(beatRoom);
+beatState.timers.clock = 5;
+const beatStartGuard = JSON.stringify(beatState.guards[0].at);
+advanceBeat(beatRoom, beatState);
+equal(beatState.tick, 6, 'step beat advances exactly six model ticks');
+equal(beatState.trace.length, 6, 'step beat advances the whole simulation');
+equal(beatState.timers.clock, 0, 'step beat advances timers');
+notEqual(JSON.stringify(beatState.guards[0].at), beatStartGuard, 'step beat advances guards');
+
+const adaptedDown = appendInputEvent([], { tick: 0, sequence: 0, action: 'right', phase: 'down' });
+const adaptedTape = appendInputEvent(adaptedDown, { tick: 6, sequence: 1, action: 'right', phase: 'up' });
+const directTape = hold('right', 0, 6);
+equal(replay(beatRoom, [], adaptedTape, 7).fingerprint, replay(beatRoom, [], directTape, 7).fingerprint, 'touch step input replays like canonical down/up input');
+const adaptedInteract = appendInputEvent([], { tick: 0, sequence: 0, action: 'interact', phase: 'down' });
+const adaptedInteractTape = appendInputEvent(adaptedInteract, { tick: 6, sequence: 1, action: 'interact', phase: 'up' });
+const directInteractTape = hold('interact', 0, 6);
+equal(replay(echoTimerRoom, [adaptedInteractTape], [], 7).fingerprint, replay(echoTimerRoom, [directInteractTape], [], 7).fingerprint, 'touch interact edge replays like keyboard interact edge');
 
 const room3 = ROOMS[2];
 const withoutSwitchTap = room3.solution.echoTapes[0].filter((event) => event.action !== 'interact');
@@ -62,7 +81,16 @@ save.currentAttemptTape = ROOMS[0].solution.playerTape;
 save.timelineCursor = 36;
 const roundTrip = parseSave(serializeSave(save));
 deepEqual(roundTrip, save, 'save round trip');
+save.settings.inputMode = 'step';
+deepEqual(parseSave(serializeSave(save)), save, 'step mode save, route, and cursor round trip');
+const oldSettings = { ...save.settings } as Record<string, unknown>;
+delete oldSettings.inputMode;
+const oldSave = parseSave(JSON.stringify({ ...save, settings: oldSettings }));
+equal(oldSave.settings.inputMode, 'realtime', 'old save defaults to real-time mode');
 throws(() => parseSave(JSON.stringify({ ...save, formatVersion: 99 })), 'wrong version accepted');
+const saveBeforeInvalidMode = serializeSave(save);
+throws(() => parseSave(JSON.stringify({ ...save, settings: { ...save.settings, inputMode: 'warp' } })), 'invalid mode import did not reject');
+equal(serializeSave(save), saveBeforeInvalidMode, 'invalid mode leaves existing save unchanged');
 throws(() => parseSave(JSON.stringify({ ...save, selectedEchoTapes: [[], [], [], []] })), 'too many echoes accepted');
 throws(() => parseSave(JSON.stringify({ ...save, currentAttemptTape: [{ tick: -1, sequence: 0, action: 'right', phase: 'down' }] })), 'negative tick accepted');
 throws(() => parseSave(JSON.stringify({ ...save, currentAttemptTape: [{ tick: 8, sequence: 0, action: 'right', phase: 'down' }, { tick: 2, sequence: 1, action: 'right', phase: 'up' }] })), 'out of order events accepted');
