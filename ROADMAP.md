@@ -8,7 +8,7 @@
 
 ## Next
 
-- Fix any model or usability findings from independent review.
+- Run the repaired private adversarial fixture against the exact commit and obtain a fresh independent decision.
 - Add Safari results if a review machine is available.
 - Replace the current text-only actor marks with reviewed original/licensed visual assets if visual review calls for it.
 
@@ -23,6 +23,7 @@
 - Pure fixed 60 Hz replay, 1,800-tick room bound, three echo slots, deterministic guard waiting, timer boundaries, terminal precedence, and solution validator.
 - Timeline record/rewind/erase controls, pause release behavior, retry, chapter gating, medals, save/export/import, and rejected-save recovery.
 - Source-level fixtures for stored solutions, repeated replay, malformed saves, echo bounds, and room bounds.
+- Review repairs: interact-gated echo switches, canonical same-tick ties, strict save narrowing, byte-bounded consistent saves, contiguous room selection, stable authored fingerprints, and executable teaching plans.
 
 ## Evidence and classification
 

@@ -52,8 +52,17 @@ export interface SolutionPlan {
   echoTapes: InputEvent[][];
   playerTape: InputEvent[];
   operations: string[];
+  steps?: PlanStep[];
+  fingerprint?: string;
   expected: 'complete';
 }
+
+export type PlanStep =
+  | { kind: 'play'; tape: InputEvent[] }
+  | { kind: 'record'; tape: InputEvent[] }
+  | { kind: 'rewind'; cursor: number }
+  | { kind: 'erase'; echoIndex: number }
+  | { kind: 'retry' };
 
 export interface ActorState {
   at: Point;

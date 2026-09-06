@@ -1,7 +1,7 @@
 import './ui/styles.css';
 import { replay, rewindTape } from './core/model.ts';
 import { ROOMS, roomById } from './core/rooms.ts';
-import { defaultSave, parseSave, safeLoad, safeStore, serializeSave, type SaveData } from './core/save.ts';
+import { defaultSave, parseSave, roomIsSelectable, safeLoad, safeStore, serializeSave, type SaveData } from './core/save.ts';
 import type { Action, InputEvent } from './core/types.ts';
 
 const SAVE_KEY = 'loop-heist-save-v1';
@@ -54,8 +54,7 @@ function completeIfReady(): void {
 }
 function selectRoom(id: number): void {
   const next = roomById(id);
-  if (next.chapter > 1 && !save.completedRooms.includes(4)) { message = 'Finish the first four vaults to open Guard Work.'; render(); return; }
-  if (next.chapter > 2 && !save.completedRooms.includes(8)) { message = 'Finish the first eight vaults to open Master Vault.'; render(); return; }
+  if (!roomIsSelectable(save, next.id)) { message = 'Finish the earlier vaults first. Completed vaults stay open for replay.'; render(); return; }
   room = next; echoTapes = []; currentTape = []; cursor = 0; sequence = 0; paused = false; message = room.lesson; saveCurrent(); render();
 }
 function togglePause(): void {
@@ -102,7 +101,7 @@ function render(): void {
   const result = currentReplay();
   completeIfReady();
   const roomButtons = ROOMS.map((candidate) => {
-    const locked = candidate.chapter === 2 && !save.completedRooms.includes(4) || candidate.chapter === 3 && !save.completedRooms.includes(8);
+    const locked = !roomIsSelectable(save, candidate.id);
     const medal = save.medals[String(candidate.id)] ? ` · ${save.medals[String(candidate.id)]}` : '';
     return `<button class="room-button ${candidate.id === room.id ? 'selected' : ''}" data-room="${candidate.id}" ${locked ? 'disabled' : ''}>${candidate.id}. ${candidate.title}${medal}</button>`;
   }).join('');

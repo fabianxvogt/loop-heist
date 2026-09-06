@@ -1,4 +1,4 @@
-import type { Action, ActorState, Direction, InputEvent, Point, ReplayResult, RoomStatic, SimState } from './types.ts';
+import type { Action, ActorState, Direction, InputEvent, PlanStep, Point, ReplayResult, RoomStatic, SimState, SolutionPlan } from './types.ts';
 
 export const TICK_RATE = 60;
 export const MOVE_EVERY = 6;
@@ -6,6 +6,7 @@ export const MAX_TICKS = 1800;
 export const MAX_ECHOES = 3;
 
 const dirs: Direction[] = ['up', 'right', 'down', 'left'];
+const actionOrder: Record<Action, number> = { up: 0, right: 1, down: 2, left: 3, interact: 4 };
 const delta: Record<Direction, Point> = {
   up: { x: 0, y: -1 }, right: { x: 1, y: 0 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 },
 };
@@ -14,9 +15,12 @@ export function pointKey(p: Point): string { return `${p.x},${p.y}`; }
 export function samePoint(a: Point, b: Point): boolean { return a.x === b.x && a.y === b.y; }
 function clonePoint(p: Point): Point { return { x: p.x, y: p.y }; }
 function cloneEvents(events: InputEvent[]): InputEvent[] { return events.map((event) => ({ ...event })); }
+function canonicalEvents(events: InputEvent[]): InputEvent[] {
+  return cloneEvents(events).sort((a, b) => a.tick - b.tick || a.sequence - b.sequence || actionOrder[b.action] - actionOrder[a.action] || (a.phase === b.phase ? 0 : a.phase === 'down' ? -1 : 1));
+}
 
 function actor(at: Point, events: InputEvent[]): ActorState {
-  return { at: clonePoint(at), facing: 'down', held: new Set(), lastDirection: 'down', events: cloneEvents(events), eventCursor: 0 };
+  return { at: clonePoint(at), facing: 'down', held: new Set(), lastDirection: 'down', events: canonicalEvents(events), eventCursor: 0 };
 }
 
 export function initialState(room: RoomStatic, echoTapes: InputEvent[][] = [], playerTape: InputEvent[] = []): SimState {
@@ -87,14 +91,14 @@ function move(room: RoomStatic, state: SimState, actorState: ActorState): Point 
   return blocked(room, next, state) ? clonePoint(actorState.at) : next;
 }
 
-function activateTimers(room: RoomStatic, state: SimState, interactedPlayer: boolean): void {
+function activateTimers(room: RoomStatic, state: SimState, interactedPlayer: boolean, interactedEchoes: boolean[]): void {
   if (interactedPlayer) {
     for (const switchDef of room.timedSwitches) {
       if (samePoint(state.player.at, switchDef.at)) state.timers[switchDef.id] = switchDef.duration;
     }
   }
   for (const switchDef of room.timedSwitches) {
-    const activatedByEcho = state.echoes.some((echo) => samePoint(echo.at, switchDef.at));
+    const activatedByEcho = state.echoes.some((echo, index) => interactedEchoes[index] && samePoint(echo.at, switchDef.at));
     if (activatedByEcho) state.timers[switchDef.id] = switchDef.duration;
   }
 }
@@ -136,12 +140,13 @@ export function step(room: RoomStatic, state: SimState): SimState {
   if (state.terminal !== 'running') return state;
   const oldPlayer = clonePoint(state.player.at);
   const playerInteract = applyEvents(state.player, state.tick);
-  for (const echo of state.echoes) applyEvents(echo, state.tick);
-  activateTimers(room, state, playerInteract);
+  const echoInteracts = state.echoes.map((echo) => applyEvents(echo, state.tick));
+  activateTimers(room, state, playerInteract, echoInteracts);
   const nextPlayer = move(room, state, state.player);
   const nextEchoes = state.echoes.map((echo) => move(room, state, echo));
   state.player.at = nextPlayer;
   state.echoes.forEach((echo, index) => { echo.at = nextEchoes[index]; });
+  for (const echo of state.echoes) if (echo.eventCursor >= echo.events.length) echo.held.clear();
   collectKey(room, state);
   const collision = guardMove(room, state, oldPlayer, state.player.at)
     || state.guards.some((guard) => samePoint(guard.at, state.player.at));
@@ -170,10 +175,61 @@ export function rewindTape(room: RoomStatic, echoTapes: InputEvent[][], tape: In
   return replay(room, echoTapes, prefix, Math.max(cursor + 1, 1));
 }
 
+function eventsEqual(a: InputEvent[], b: InputEvent[]): boolean { return JSON.stringify(a) === JSON.stringify(b); }
+function tapesEqual(a: InputEvent[][], b: InputEvent[][]): boolean { return a.length === b.length && a.every((tape, index) => eventsEqual(tape, b[index] ?? [])); }
+function operationNames(steps: PlanStep[]): string[] { return steps.map((step) => step.kind); }
+
+export interface PlanExecution {
+  echoTapes: InputEvent[][];
+  playerTape: InputEvent[];
+  operations: string[];
+  failure?: string;
+}
+
+export function executePlan(room: RoomStatic, plan: SolutionPlan): PlanExecution {
+  let echoTapes: InputEvent[][] = [];
+  let currentTape: InputEvent[] = [];
+  const operations: string[] = [];
+  for (const step of plan.steps ?? []) {
+    operations.push(step.kind);
+    if (step.kind === 'play') currentTape = canonicalEvents(step.tape);
+    if (step.kind === 'record') {
+      const tape = canonicalEvents(step.tape);
+      if (!tape.length || echoTapes.length >= MAX_ECHOES) return { echoTapes, playerTape: currentTape, operations, failure: 'invalid record step' };
+      echoTapes = [...echoTapes, tape]; currentTape = [];
+    }
+    if (step.kind === 'rewind') {
+      const prefix = currentTape.filter((event) => event.tick <= step.cursor);
+      if (prefix.length === currentTape.length) return { echoTapes, playerTape: currentTape, operations, failure: 'rewind did not truncate a current tape' };
+      currentTape = prefix;
+      rewindTape(room, echoTapes, currentTape, step.cursor);
+    }
+    if (step.kind === 'erase') {
+      if (step.echoIndex < 0 || step.echoIndex >= echoTapes.length) return { echoTapes, playerTape: currentTape, operations, failure: 'erase index is not present' };
+      echoTapes = echoTapes.filter((_, index) => index !== step.echoIndex);
+    }
+    if (step.kind === 'retry') { echoTapes = []; currentTape = []; }
+  }
+  return { echoTapes, playerTape: currentTape, operations };
+}
+
+export function validateAuthoredSolution(room: RoomStatic): { accepted: boolean; fingerprint: string; failure?: string } {
+  const plan = room.solution;
+  if (!plan.steps?.length || !plan.fingerprint) return { accepted: false, fingerprint: '', failure: 'authored solution has no executable steps or fingerprint' };
+  const execution = executePlan(room, plan);
+  if (execution.failure || !tapesEqual(execution.echoTapes, plan.echoTapes) || !eventsEqual(execution.playerTape, plan.playerTape)) return { accepted: false, fingerprint: '', failure: execution.failure ?? 'plan steps do not produce its stored tapes' };
+  const result = replay(room, execution.echoTapes, execution.playerTape);
+  if (result.state.terminal !== 'success') return { accepted: false, fingerprint: result.fingerprint, failure: `terminal=${result.state.terminal}` };
+  if (result.fingerprint !== plan.fingerprint) return { accepted: false, fingerprint: result.fingerprint, failure: 'stored solution fingerprint changed' };
+  if (JSON.stringify(execution.operations) !== JSON.stringify(plan.operations)) return { accepted: false, fingerprint: result.fingerprint, failure: 'stored operation sequence changed' };
+  return { accepted: true, fingerprint: result.fingerprint };
+}
+
 export function validate(room: RoomStatic, plan = room.solution): { accepted: boolean; fingerprint: string; failure?: string } {
   if (plan.echoTapes.length > MAX_ECHOES) return { accepted: false, fingerprint: '', failure: 'too many echo tapes' };
   const result = replay(room, plan.echoTapes, plan.playerTape);
   if (result.state.terminal !== 'success') return { accepted: false, fingerprint: result.fingerprint, failure: `terminal=${result.state.terminal}` };
-  if (!plan.operations.includes('record') || !plan.operations.includes('rewind')) return { accepted: false, fingerprint: result.fingerprint, failure: 'solution omits timeline operation evidence' };
+  if (plan.steps?.length && JSON.stringify(operationNames(plan.steps)) !== JSON.stringify(plan.operations)) return { accepted: false, fingerprint: result.fingerprint, failure: 'declared operations do not match executable steps' };
+  if (plan.fingerprint && result.fingerprint !== plan.fingerprint) return { accepted: false, fingerprint: result.fingerprint, failure: 'solution fingerprint does not match this route' };
   return { accepted: true, fingerprint: result.fingerprint };
 }
