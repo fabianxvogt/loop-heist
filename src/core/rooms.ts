@@ -63,8 +63,8 @@ r5.keys = [{ id: 'vault-key', at: p(2, 1) }]; r5.requiredKeyIds = ['vault-key'];
 r5.guards = [{ id: 'patrol-a', patrol: [p(7, 4), p(7, 3)] }];
 r5.solution = plan([merge(move('down', 1), move('right', 2, 6))], merge(move('right', 1), move('down', 1, 6), move('right', 5, 12)));
 
-const r6 = base(6, 'Blind Corner', 'A ghost can block a guard. It cannot hurt you or steal your key.', p(1, 2), p(7, 2));
-r6.plates = []; r6.guards = [{ id: 'corner-guard', patrol: [p(5, 1), p(5, 2)] }];
+const r6 = base(6, 'Blind Corner', 'A ghost must hold the corner before the patrol moves into your crossing.', p(1, 2), p(7, 2));
+r6.plates = []; r6.guards = [{ id: 'corner-guard', patrol: [p(5, 1), p(5, 2)], startTick: 18 }];
 r6.solution = plan([move('right', 4)], move('right', 6));
 
 const r7 = base(7, 'Double Bind', 'Two echoes hold two plates. Duplicate bodies do not double a plate pulse.', p(1, 2), p(7, 2));
@@ -93,9 +93,9 @@ r9.solution = plan([merge(move('down', 1), move('right', 2, 6), hold('interact',
 const r10 = base(10, 'Crossfire', 'Two echoes open the relay; a third echo blocks the guard while you cross the hazard lanes.', p(1, 2), p(7, 2));
 r10.hazards = [p(4, 1), p(6, 1)]; r10.plates = [{ id: 'p1', at: p(3, 2) }]; r10.requiredPlateIds = ['p1'];
 r10.timedSwitches = [{ id: 'crossfire-clock', at: p(3, 3), duration: 60 }]; r10.requiredTimerIds = ['crossfire-clock'];
-r10.doors = [{ at: p(5, 2), plateIds: ['p1'], timerIds: ['crossfire-clock'] }];
-r10.guards = [{ id: 'crossfire-guard', patrol: [p(7, 3), p(5, 2)] }];
-r10.solution = plan([move('right', 2), merge(move('down', 1), move('right', 2, 6), hold('interact', 18, 1)), move('right', 4)], move('right', 7));
+r10.doors = [{ at: p(4, 2), plateIds: ['p1'], timerIds: ['crossfire-clock'] }, { at: p(5, 2), plateIds: ['p1'], timerIds: ['crossfire-clock'] }];
+r10.guards = [{ id: 'crossfire-guard', patrol: [p(7, 3), p(5, 2)], startTick: 12 }];
+r10.solution = plan([move('right', 2), merge(move('down', 1), move('right', 2, 6), hold('interact', 18, 1)), move('right', 5)], move('right', 7));
 
 const r11 = base(11, 'Clockwork', 'Three switches share one exact timing window. Order is part of the route.', p(1, 2), p(7, 2), 7);
 r11.walls = outerWalls(9, 7); r11.timedSwitches = [{ id: 't1', at: p(3, 2), duration: 72 }, { id: 't2', at: p(3, 3), duration: 72 }, { id: 't3', at: p(3, 4), duration: 72 }];
@@ -119,11 +119,11 @@ const STORED_FINGERPRINTS: Record<number, string> = {
   3: '31;success;7,2|3,2;;{"gate":29};',
   4: '31;success;7,2|3,2|3,3;;{};',
   5: '37;success;7,2|3,2;patrol-a:7,3:0;{};vault-key',
-  6: '31;success;7,2|5,2;corner-guard:5,1:12;{};',
+  6: '31;success;7,2|5,2;corner-guard:5,1:13;{};',
   7: '31;success;7,2|3,2|3,3;;{};',
   8: '31;success;7,2|3,2;drop-guard:7,4:0;{};',
   9: '37;success;7,2|3,2;relay-guard:7,3:0;{"relay-clock":41};relay-key',
-  10: '31;success;7,2|3,2|3,3|5,2;crossfire-guard:7,3:12;{"crossfire-clock":47};',
+  10: '37;success;7,2|3,2|3,3|5,2;crossfire-guard:7,3:13;{"crossfire-clock":41};',
   11: '37;success;7,2|3,2|3,3|3,4;;{"t1":47,"t2":53,"t3":59};',
   12: '37;success;7,2|3,2|3,3;master-guard:7,4:0;{"master-clock":59};master-key',
 };

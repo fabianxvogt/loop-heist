@@ -115,7 +115,8 @@ function guardMove(room: RoomStatic, state: SimState, oldPlayer: Point, newPlaye
     const nextIndex = (guardState.cursor + 1) % guard.patrol.length;
     const target = guard.patrol[nextIndex];
     const blockedByEcho = state.echoes.some((echo) => samePoint(echo.at, target));
-    if (state.tick % cadence === 0 && !blockedByEcho) {
+    const startTick = guard.startTick ?? 0;
+    if (state.tick >= startTick && (state.tick - startTick) % cadence === 0 && !blockedByEcho) {
       if (samePoint(target, newPlayer) || (samePoint(guardState.at, newPlayer) && samePoint(target, oldPlayer))) collision = true;
       else { guardState.cursor = nextIndex; guardState.at = clonePoint(target); }
     } else if (blockedByEcho) guardState.waitCount += 1;
@@ -215,6 +216,7 @@ export function executePlan(room: RoomStatic, plan: SolutionPlan): PlanExecution
 
 export function validateAuthoredSolution(room: RoomStatic): { accepted: boolean; fingerprint: string; failure?: string } {
   const plan = room.solution;
+  if (plan.expected !== 'complete') return { accepted: false, fingerprint: '', failure: 'authored solution expected result is not complete' };
   if (!plan.steps?.length || !plan.fingerprint) return { accepted: false, fingerprint: '', failure: 'authored solution has no executable steps or fingerprint' };
   const execution = executePlan(room, plan);
   if (execution.failure || !tapesEqual(execution.echoTapes, plan.echoTapes) || !eventsEqual(execution.playerTape, plan.playerTape)) return { accepted: false, fingerprint: '', failure: execution.failure ?? 'plan steps do not produce its stored tapes' };

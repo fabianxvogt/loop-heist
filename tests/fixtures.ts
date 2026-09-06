@@ -1,4 +1,4 @@
-import { initialState, replay, step, validate } from '../src/core/model.ts';
+import { initialState, replay, step, validate, validateAuthoredSolution } from '../src/core/model.ts';
 import { ROOMS, validateCampaign, validateRoomBounds } from '../src/core/rooms.ts';
 import { MAX_SAVE_BYTES, defaultSave, parseSave, roomIsSelectable, serializeSave } from '../src/core/save.ts';
 import type { Action, InputEvent, RoomStatic } from '../src/core/types.ts';
@@ -44,9 +44,16 @@ equal(validate(room3, { ...room3.solution, echoTapes: [withoutSwitchTap] }).acce
 const room6 = ROOMS[5];
 equal(validate(room6, { ...room6.solution, playerTape: room6.solution.playerTape.slice(0, -1) }).accepted, true, 'redundant trailing player key-up after success may be omitted');
 equal(validate(room6, { ...room6.solution, echoTapes: [room6.solution.echoTapes[0].slice(1)] }).accepted, false, 'Room 6 needs the echo movement down edge');
+equal(validate(room6, { ...room6.solution, echoTapes: [[]], steps: undefined, fingerprint: undefined }).accepted, false, 'Room 6 fails when the guard-blocking echo stays at start');
 equal(validate(ROOMS[3], { ...ROOMS[3].solution, operations: ['record', 'rewind'] }).accepted, false, 'Room 4 requires its executable erase plan');
 equal(validate(ROOMS[7], { ...ROOMS[7].solution, operations: ['record', 'rewind'] }).accepted, false, 'Room 8 requires its executable retry and erase plan');
 equal(ROOMS[9].solution.echoTapes.length, 3, 'Room 10 stores three authored echo roles');
+for (let index = 0; index < ROOMS[9].solution.echoTapes.length; index += 1) {
+  const withoutRole = ROOMS[9].solution.echoTapes.filter((_, echoIndex) => echoIndex !== index);
+  equal(validate(ROOMS[9], { ...ROOMS[9].solution, echoTapes: withoutRole, steps: undefined, fingerprint: undefined }).accepted, false, `Room 10 rejects removal of echo role ${index + 1}`);
+}
+const wrongExpected = { ...ROOMS[0], solution: { ...ROOMS[0].solution, expected: 'not-complete' } } as unknown as typeof ROOMS[number];
+equal(validateAuthoredSolution(wrongExpected).accepted, false, 'authored certificate checks expected result at runtime');
 
 const save = defaultSave(4);
 save.completedRooms = [1, 2, 3];

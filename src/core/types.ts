@@ -21,7 +21,7 @@ export interface Door {
 export interface Plate { id: string; at: Point }
 export interface TimedSwitch { id: string; at: Point; duration: number }
 export interface Key { id: string; at: Point }
-export interface Guard { id: string; patrol: Point[]; cadence?: number }
+export interface Guard { id: string; patrol: Point[]; cadence?: number; startTick?: number }
 
 export interface RoomStatic {
   id: number;
