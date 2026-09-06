@@ -181,8 +181,11 @@ export function advanceBeat(room: RoomStatic, state: SimState): SimState {
 export function replay(room: RoomStatic, echoTapes: InputEvent[][] = [], playerTape: InputEvent[] = [], until = room.budget): ReplayResult {
   if (echoTapes.length > MAX_ECHOES) throw new Error('At most three echo tapes are allowed.');
   const state = initialState(room, echoTapes, playerTape);
-  while (state.terminal === 'running' && state.tick < Math.min(until, MAX_TICKS)) step(room, state);
-  if (state.terminal === 'running' && state.tick >= Math.min(until, MAX_TICKS)) state.terminal = 'budget';
+  // A bounded preview stops before the room budget without inventing a terminal result.
+  // `step` remains the only place that marks a real budget terminal at room.budget.
+  const previewLimit = Math.max(0, Math.min(until, MAX_TICKS));
+  while (state.terminal === 'running' && state.tick < previewLimit) step(room, state);
+  if (state.terminal === 'running' && state.tick >= room.budget) state.terminal = 'budget';
   return { state, fingerprint: fingerprintState(state) };
 }
 

@@ -3,6 +3,7 @@
 ## Now
 
 - Accessible controls are implemented locally: visible touch/keyboard directions, Interact, six-tick Wait, and optional step-at-your-pace mode through the same deterministic model.
+- Preview-boundary repair is implemented locally: partial cursor previews stay running, while real room-budget completion still produces the budget terminal.
 - Public source preview remains at the last accepted source tag `source-accepted-6d525371`; this repair is not pushed or hosted until independent review.
 - Browser QA in desktop Chromium and a narrow mobile viewport when the owner grants the first-window slot.
 - Five fresh first-session playtests; record echo explanation, opening-chapter completion, retry, and save recovery observations.

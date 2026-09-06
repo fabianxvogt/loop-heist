@@ -52,6 +52,10 @@ const adaptedDown = appendInputEvent([], { tick: 0, sequence: 0, action: 'right'
 const adaptedTape = appendInputEvent(adaptedDown, { tick: 6, sequence: 1, action: 'right', phase: 'up' });
 const directTape = hold('right', 0, 6);
 equal(replay(beatRoom, [], adaptedTape, 7).fingerprint, replay(beatRoom, [], directTape, 7).fingerprint, 'touch step input replays like canonical down/up input');
+const previewState = replay(beatRoom, [], directTape, 1).state;
+equal(previewState.terminal, 'running', 'partial replay preview is not a real budget terminal');
+advanceBeat(beatRoom, previewState);
+deepEqual(previewState, replay(beatRoom, [], directTape, 7).state, 'preview beat reaches the next canonical replay boundary');
 const adaptedInteract = appendInputEvent([], { tick: 0, sequence: 0, action: 'interact', phase: 'down' });
 const adaptedInteractTape = appendInputEvent(adaptedInteract, { tick: 6, sequence: 1, action: 'interact', phase: 'up' });
 const directInteractTape = hold('interact', 0, 6);
