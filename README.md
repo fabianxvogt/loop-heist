@@ -1,3 +1,13 @@
+<!-- portfolio
+{
+  "title": "Loop Heist",
+  "topic": "Play & products/Games",
+  "type": "product",
+  "description": "Loop Heist deterministic browser puzzle campaign — reviewed source preview",
+  "demo": "https://loop-heist.fabian523417.chatgpt.site"
+}
+-->
+
 # Loop Heist
 
 Loop Heist is a deterministic browser puzzle campaign. You record a route, commit it as an echo, then use the replaying accomplice to hold a plate, tap a switch, or block a guard while you take the next route.
